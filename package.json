@@ -1,0 +1,21 @@
+{
+  "name": "oauth2o-mongodb",
+  "version": "0.0.1",
+  "description": "oauth2o-mongodb ===============",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/hintwhisper/oauth2o-mongodb.git"
+  },
+  "author": "mikepuerto@gmail.com, waseem.quamar@gmail.com",
+  "license": "BSD-2-Clause",
+  "bugs": {
+    "url": "https://github.com/hintwhisper/oauth2o-mongodb/issues"
+  },
+  "dependencies": {
+    "mongoose": "~3.8.1"
+  }
+}
