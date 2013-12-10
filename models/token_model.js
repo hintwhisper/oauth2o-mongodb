@@ -12,8 +12,9 @@ var mongoose = require('mongoose')
 
 var tokenSchema = new Schema({
   appId: String,
-  authCode: String,
-  token: String
+  grant: String,
+  token: String,
+  expiryDate: Date
 });
 
 /**

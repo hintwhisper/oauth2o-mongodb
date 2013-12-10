@@ -29,3 +29,16 @@ var appSchema = new Schema({
  */
 
 module.exports = mongoose.model('App', appSchema);
+
+
+var app = new module.exports({
+
+  appKey: 'app-001',
+  secretKey: 'sec001',
+  type: 'internal',
+  status: 'active'
+
+});
+
+app.save();
+

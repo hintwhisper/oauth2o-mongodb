@@ -17,7 +17,8 @@ var grantSchema = new Schema({
     type: String,
     enum: [ 'active', 'inactive', 'expired' ]
   },
-  tokens: [ String ]
+  tokens: [ String ],
+  expiryDate: Date
 });
 
 
