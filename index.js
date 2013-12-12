@@ -4,6 +4,7 @@
  */
 
 var crypto = require('crypto')
+, bcrypt = require('bcrypt');
 
 /**
  * 
@@ -22,7 +23,7 @@ module.exports = function(connectionString) {
   /**
    * connect to the db
    */
-
+console.log('.............. inside oauth2o-mongodb.......................');
   mongoose.connect(connectionString, { server: { poolSize: 5 } });
 
   var App = require('./models/app_model')
@@ -38,18 +39,35 @@ module.exports = function(connectionString) {
    */
 
   MongooseAdapater.createGrant = function(req, res, next) {
+    console.log('mongodb - createGrant - '+req.body.appId);
     App.findOne({ appId: req.body.appId }, function(err, app) {
       if (err) return next(err);
+      console.log(app);
       if (app && app.status === 'active') {
         crypto.randomBytes(48, function(ex, buf) {
 
           var grantCode = buf.toString('hex');
+
+          //REMOVE - Test Encrypted Code
+          var cipher = crypto.createCipher('aes-256-cbc', app.secretKey);
+          var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
+          console.log('encrypted - '+encrypted);
+
+          //REMOVE - Test Decrypted Code
+          var decipher = crypto.createDecipher('aes-256-cbc', app.secretKey);
+          var plain = decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8');
+          console.log('decrypted - '+plain);
+          
+
+
           Grant.create({    
             grant: grantCode,
             appId: req.body.appId,
             status: 'active'
           }, function(err, grant) {
             if (err) return next(err);
+
+
             res.json(grantCode);
           });
         });
@@ -74,7 +92,7 @@ module.exports = function(connectionString) {
         //get encrypted grant code and decrypt it.
         var encGrant = req.body.encGrant;
 
-        //TODO: Decrypt with app.secretKey
+        //TODO: Decrypt encGrant with app.secretKey
         var decKey;
 
         Grant.findOne({appId: req.body.appId, grant: decKey}, function(err, grant) {
@@ -182,8 +200,11 @@ module.exports = function(connectionString) {
 
   };
 
+
   /**
    * expose the module via `module.exports`
    */
+  console.log('........returning MongooseAdapater ...........................');
+  return MongooseAdapater;
 
 };
