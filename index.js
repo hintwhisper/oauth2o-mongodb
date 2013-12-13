@@ -44,34 +44,37 @@ console.log('.............. inside oauth2o-mongodb.......................');
       if (err) return next(err);
       console.log(app);
       if (app && app.status === 'active') {
-        crypto.randomBytes(48, function(ex, buf) {
 
-          var grantCode = buf.toString('hex');
+        var buf = crypto.randomBytes(48);
 
-          //REMOVE - Test Encrypted Code
-          var cipher = crypto.createCipher('aes-256-cbc', app.secretKey);
-          var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
-          console.log('encrypted - '+encrypted);
+        if (err) return next(err);
 
-          //REMOVE - Test Decrypted Code
-          var decipher = crypto.createDecipher('aes-256-cbc', app.secretKey);
-          var plain = decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8');
-          console.log('decrypted - '+plain);
-          
+        var grantCode = buf.toString('hex');
 
+        //REMOVE - Test Encrypted Code
+        var cipher = crypto.createCipher('aes-256-cbc', app.secretKey);
+        var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
+        console.log('encrypted - '+encrypted);
 
-          Grant.create({    
-            grant: grantCode,
-            appId: req.body.appId,
-            status: 'active'
-          }, function(err, grant) {
-            if (err) return next(err);
+        //REMOVE - Test Decrypted Code
+        var decipher = crypto.createDecipher('aes-256-cbc', app.secretKey);
+        var plain = decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8');
+        console.log('decrypted - '+plain);
 
+        Grant.create({    
+          grant: grantCode,
+          appId: req.body.appId,
+          status: 'active'
+        }, function(err, grant) {
+          if (err) return next(err);
 
-            res.json(grantCode);
-          });
+          res.json(grantCode);
         });
-      }
+
+      }else {
+
+        res.json('002: App is not active');
+      };
     });
   };
 
@@ -93,13 +96,14 @@ console.log('.............. inside oauth2o-mongodb.......................');
         var encGrant = req.body.encGrant;
 
         //TODO: Decrypt encGrant with app.secretKey
-        var decKey;
+        var decKey = app.decipher(encGrant);
+        console.log("encGrant = %s", encGrant);
+        console.log(decKey);
 
         Grant.findOne({appId: req.body.appId, grant: decKey}, function(err, grant) {
 
-          if (err) 
-          {
-            console.log('001: Unauthorize Access. Grant passed doest not exist for App: '+req.body.appId);
+          if (err) {
+            console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
             return next(err);
           }
           if (grant && grant.status === 'active') {
@@ -135,8 +139,6 @@ console.log('.............. inside oauth2o-mongodb.......................');
           return res.json('003: Grant has expired. Need to request for Grant again.');
         });
 
-
-
       }
       return res.json('002: App is not active');
   
@@ -167,13 +169,12 @@ console.log('.............. inside oauth2o-mongodb.......................');
             if (grant && grant.status === 'active') {
               
               //check if Grant is not expired
-              if (grant.expiryDate && grant.expiryDate > new Date()){
+              if (grant.expiryDate && grant.expiryDate > new Date()) {
                 return res.json('003: Grant has expired. Need to request for Grant again.');      
               }
 
               //If grant is valid
-              if (token.status === 'active')
-              {
+              if (token.status === 'active') {
                 //Check if token has not expired token.
                 if (token.expiryDate && token.expiryDate > new Date()){
                   return res.json('004: Token has expired. Need to request for Token again.');      

@@ -4,7 +4,8 @@
  */
 
 var mongoose = require('mongoose')
-  , Schema = mongoose.Schema;
+  , Schema = mongoose.Schema
+  , crypto = require('crypto');
 
 /**
  * 
@@ -23,6 +24,25 @@ var AppSchema = new Schema({
   }
 });
 
+
+/**
+ * Instance methods
+ */
+
+AppSchema.methods = {
+
+  /**
+   *  Decipher and return in plain format
+   */
+  decipher: function(encryption) {
+    
+    // TODO : fix the error https://gist.github.com/ktkaushik/cc39446202cdcd41bcde
+    var decipher = crypto.createDecipher('aes-256-cbc', this.secretKey);
+    return decipher.update(encryption, 'base64', 'utf8') + decipher.final('utf8');
+
+  }
+
+};
 
 /**
  * module returns compiled schema
