@@ -10,7 +10,7 @@ var mongoose = require('mongoose')
  * 
  */
 
-var appSchema = new Schema({
+var AppSchema = new Schema({
   appId: String,
   secretKey: String,
   type: {
@@ -28,7 +28,7 @@ var appSchema = new Schema({
  * module returns compiled schema
  */
 
-module.exports = mongoose.model('App', appSchema);
+module.exports = mongoose.model('App', AppSchema);
 
 
 // var app = new module.exports({
