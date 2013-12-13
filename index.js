@@ -110,28 +110,29 @@ console.log('.............. inside oauth2o-mongodb.......................');
 
             //If Grant is valid
 
-            crypto.randomBytes(48, function(ex, buf) {
+            // crypto.randomBytes(48, function(ex, buf) {
+            var buf = crypto.randomBytes(48);
 
-              var tokenString = buf.toString('hex');
+            var tokenString = buf.toString('hex');
 
-              Token.create({
-                appId: req.body.appId,
-                grant: decKey,
-                token: tokenString
-              }, function(err, token){
+            Token.create({
+              appId: req.body.appId,
+              grant: decKey,
+              token: tokenString
+            }, function(err, token){
 
-                if (err) return next(err);
+              if (err) return next(err);
 
-                //Push token to Grant
-                grant.update( {$push: { tokens: tokenString }}, function (err) {
-                  if(err) return next(err);
-                });
-
-                res.json(tokenString);
-
+              //Push token to Grant
+              grant.update( {$push: { tokens: tokenString }}, function (err) {
+                if(err) return next(err);
               });
 
+              res.json(tokenString);
+
             });
+
+            // });
           }
           return res.json('003: Grant has expired. Need to request for Grant again.');
         });
