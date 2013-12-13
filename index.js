@@ -80,65 +80,72 @@ console.log('.............. inside oauth2o-mongodb.......................');
    */
 
   MongooseAdapater.createToken = function(req, res, next) {
-    
+    var appId = req.body.appId;
+
     //If appId exists
-    App.findOne({ appId: req.body.appId }, function(err, app) {
-
+    App.findOne({ appId: appId }, function(err, app) {
       if (err) return next(err);
-      if (app && app.status === 'active') {
-        
-        //get encrypted grant code and decrypt it.
-        var encGrant = req.body.encGrant;
+      if(app){
+        if(app.status === 'active') {
 
-        //TODO: Decrypt encGrant with app.secretKey
-        var decKey = app.decipher(encGrant);
-        console.log("encGrant = %s", encGrant);
-        console.log(decKey);
+          //get encrypted grant code and decrypt it.
+          var encGrant = req.body.encGrant;
 
-        Grant.findOne({appId: req.body.appId, grant: decKey}, function(err, grant) {
+          //TODO: Decrypt encGrant with app.secretKey
+          var decKey = app.decipher(encGrant);
 
-          if (err) {
-            console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
-            return next(err);
-          }
-          if (grant && grant.status === 'active') {
+          Grant.findOne({appId: appId, grant: decKey}, function(err, grant) {
+            if (err) {
+              console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
+              return next(err);
+            };
+            if(grant){
+              if (grant.status === 'active') {
 
-            //check if Grant has not expired. Grant.createdTime < now()
-            if (grant.expiryDate && grant.expiryDate > new Date()){
-              return res.json('003: Grant has expired. Need to request for Grant again.');      
-            }
+                //check if Grant has not expired. Grant.createdTime < now()
+                if (grant.expiryDate && grant.expiryDate > new Date()){
+                  return res.json('003: Grant has expired. Need to request for Grant again.');      
+                }
 
-            //If Grant is valid
+                //If Grant is valid
 
-            // crypto.randomBytes(48, function(ex, buf) {
-            var buf = crypto.randomBytes(48);
+                // crypto.randomBytes(48, function(ex, buf) {
+                var buf = crypto.randomBytes(48);
 
-            var tokenString = buf.toString('hex');
+                var tokenString = buf.toString('hex');
 
-            Token.create({
-              appId: req.body.appId,
-              grant: decKey,
-              token: tokenString
-            }, function(err, token){
+                Token.create({
+                  appId: req.body.appId,
+                  grant: decKey,
+                  token: tokenString
+                }, function(err, token){
 
-              if (err) return next(err);
+                  if (err) return next(err);
 
-              //Push token to Grant
-              grant.update( {$push: { tokens: tokenString }}, function (err) {
-                if(err) return next(err);
-              });
+                  //Push token to Grant
+                  grant.update( {$push: { tokens: tokenString }}, function (err) {
+                    if(err) return next(err);
+                    res.json(tokenString);
+                  });
 
-              res.json(tokenString);
+                });
 
-            });
+              } else{
+                res.json('003: Grant has expired. Need to request for Grant again.');
+              };
+            }else {
+              res.json('003: Grant does not exist');
+            };
+           
+          });
 
-            // });
-          }
-          return res.json('003: Grant has expired. Need to request for Grant again.');
-        });
 
-      }
-      return res.json('002: App is not active');
+        }else {
+          res.json('002: App is not active');
+        };
+      }else {
+        res.json('001: App does not exist');
+      };
   
     });
     //return res.json('001: App does not exist');
