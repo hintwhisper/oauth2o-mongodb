@@ -56,11 +56,6 @@ console.log('.............. inside oauth2o-mongodb.......................');
         var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
         console.log('encrypted - '+encrypted);
 
-        //REMOVE - Test Decrypted Code
-        var decipher = crypto.createDecipher('aes-256-cbc', app.secretKey);
-        var plain = decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8');
-        console.log('decrypted - '+plain);
-
         Grant.create({    
           grant: grantCode,
           appId: req.body.appId,
@@ -128,7 +123,9 @@ console.log('.............. inside oauth2o-mongodb.......................');
                 if (err) return next(err);
 
                 //Push token to Grant
-                grant.tokens.push(tokenString);
+                grant.update( {$push: { tokens: tokenString }}, function (err) {
+                  if(err) return next(err);
+                });
 
                 res.json(tokenString);
 
