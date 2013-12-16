@@ -14,6 +14,10 @@ var TokenSchema = new Schema({
   appId: String,
   grant: String,
   token: String,
+  status: {
+    type: String,
+    enum: [ 'active', 'inactive', 'expired' ]
+  },
   expiryDate: Date
 });
 
