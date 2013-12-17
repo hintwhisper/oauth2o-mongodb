@@ -23,7 +23,6 @@ module.exports = function(connectionString) {
   /**
    * connect to the db
    */
-console.log('.............. inside oauth2o-mongodb.......................');
   mongoose.connect(connectionString, { server: { poolSize: 5 } });
 
   var App = require('./models/app_model')
@@ -39,39 +38,40 @@ console.log('.............. inside oauth2o-mongodb.......................');
    */
 
   MongooseAdapater.createGrant = function(req, res, next) {
-    console.log('mongodb - createGrant - '+req.body.appId);
     App.findOne({ appId: req.body.appId }, function(err, app) {
       if (err) return next(err);
-      console.log(app);
       if (app && app.status === 'active') {
-        crypto.randomBytes(48, function(ex, buf) {
 
-          var grantCode = buf.toString('hex');
+        var buf = crypto.randomBytes(48);
 
-          //REMOVE - Test Encrypted Code
-          var cipher = crypto.createCipher('aes-256-cbc', app.secretKey);
-          var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
-          console.log('encrypted - '+encrypted);
+        if (err) return next(err);
 
-          //REMOVE - Test Decrypted Code
-          var decipher = crypto.createDecipher('aes-256-cbc', app.secretKey);
-          var plain = decipher.update(encrypted, 'base64', 'utf8') + decipher.final('utf8');
-          console.log('decrypted - '+plain);
-          
+        var grantCode = buf.toString('hex');
 
+        //REMOVE - Test Encrypted Code
+        var cipher = crypto.createCipher('aes-256-cbc', app.secretKey);
+        // 34TRwWOUPdpcSWPC5e83pWYbdy7ZjK7X5IDEMJRPaVQMJgeLSGc1B8qVwAHyCRQhbvbhL7xfjk6A4MiLCIpthNrgs/SCAUAiptVkpl09KnCkrqkb3AlzLDIQQR3g17JsbT86NXdclCdWwUitOCTLhg==
+        var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
+        console.log('encrypted - '+ encrypted);
 
-          Grant.create({    
-            grant: grantCode,
-            appId: req.body.appId,
-            status: 'active'
-          }, function(err, grant) {
-            if (err) return next(err);
+        var expiryDate = new Date();
+        expiryDate.setDate( expiryDate.getDate() + 7 ); // one week expiry
 
+        Grant.create({
+          grant: grantCode,
+          appId: req.body.appId,
+          status: 'active',
+          expiryDate: expiryDate
+        }, function(err, grant) {
+          if (err) return next(err);
 
-            res.json(grantCode);
-          });
+          res.json(grantCode);
         });
-      }
+
+      }else {
+
+        res.json('002: App does not exist or is not active');
+      };
     });
   };
 
@@ -82,63 +82,70 @@ console.log('.............. inside oauth2o-mongodb.......................');
    */
 
   MongooseAdapater.createToken = function(req, res, next) {
-    
+    var appId = req.body.appId;
+
     //If appId exists
-    App.findOne({ appId: req.body.appId }, function(err, app) {
-
+    App.findOne({ appId: appId }, function(err, app) {
       if (err) return next(err);
-      if (app && app.status === 'active') {
-        
-        //get encrypted grant code and decrypt it.
-        var encGrant = req.body.encGrant;
+      if(app){
+        if(app.status === 'active') {
 
-        //TODO: Decrypt encGrant with app.secretKey
-        var decKey;
+          //get encrypted grant code and decrypt it.
+          var encGrant = req.body.encGrant;
 
-        Grant.findOne({appId: req.body.appId, grant: decKey}, function(err, grant) {
+          //TODO: Decrypt encGrant with app.secretKey
+          var decKey = app.decipher(encGrant);
 
-          if (err) 
-          {
-            console.log('001: Unauthorize Access. Grant passed doest not exist for App: '+req.body.appId);
-            return next(err);
-          }
-          if (grant && grant.status === 'active') {
+          Grant.findOne({appId: appId, grant: decKey}, function(err, grant) {
 
-            //check if Grant has not expired. Grant.createdTime < now()
-            if (grant.expiryDate && grant.expiryDate > new Date()){
-              return res.json('003: Grant has expired. Need to request for Grant again.');      
-            }
+            if (err) {
+              console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
+              return next(err);
+            };
 
-            //If Grant is valid
+            if(grant){
+              if (grant.status === 'active') {
 
-            crypto.randomBytes(48, function(ex, buf) {
+                //check if Grant has not expired. Grant.createdTime < now()
+                checkForExpiry( grant, res, next );
 
-              var tokenString = buf.toString('hex');
+                var buf = crypto.randomBytes(48);
 
-              Token.create({
-                appId: req.body.appId,
-                grant: decKey,
-                token: tokenString
-              }, function(err, token){
+                var tokenString = buf.toString('hex');
 
-                if (err) return next(err);
+                Token.create({
+                  appId: req.body.appId,
+                  grant: decKey,
+                  token: tokenString,
+                  status: 'active'
+                }, function(err, token){
 
-                //Push token to Grant
-                grant.tokens.push(tokenString);
+                  if (err) return next(err);
 
-                res.json(tokenString);
+                  //Push token to Grant
+                  grant.update( {$push: { tokens: tokenString }}, function (err) {
+                    if(err) return next(err);
+                    res.json(tokenString);
+                  });
 
-              });
+                });
 
-            });
-          }
-          return res.json('003: Grant has expired. Need to request for Grant again.');
-        });
+              } else{
+                res.json('003: Grant has expired. Need to request for Grant again.');
+              };
+            }else {
+              res.json('003: Grant does not exist');
+            };
+           
+          });
 
 
-
-      }
-      return res.json('002: App is not active');
+        }else {
+          res.json('002: App is not active');
+        };
+      }else {
+        res.json('001: App does not exist');
+      };
   
     });
     //return res.json('001: App does not exist');
@@ -154,44 +161,62 @@ console.log('.............. inside oauth2o-mongodb.......................');
     // is valid then `next()`
 
     //Pick token from header and not from body
-    var tokenString = req.headers['token'];
+    var tokenString = req.headers['authorization'];
+    console.log("Authorization Header: "+tokenString);
+
     Token.findOne({token: tokenString}, function(err, token){
       
       if (err) return next(err);
-      App.findOne({appId: token.appId}, function(err, app){
-        if (err) return next(err);
-        if (app.status === 'active'){
+      if (token) {
+        App.findOne({appId: token.appId}, function(err, app){
+          if (err) return next(err);
+          if (app) {
+            if (app.status === 'active'){
 
-          Grant.findOne({appId: token.appId, grant: token.grant}, function(err, grant) {
-            if (err) return next(err);
-            if (grant && grant.status === 'active') {
-              
-              //check if Grant is not expired
-              if (grant.expiryDate && grant.expiryDate > new Date()){
-                return res.json('003: Grant has expired. Need to request for Grant again.');      
-              }
+              Grant.findOne({appId: token.appId, grant: token.grant}, function(err, grant) {
+                if (err) return next(err);
+                if (grant) {
+                  if (grant.status === 'active') {
 
-              //If grant is valid
-              if (token.status === 'active')
-              {
-                //Check if token has not expired token.
-                if (token.expiryDate && token.expiryDate > new Date()){
-                  return res.json('004: Token has expired. Need to request for Token again.');      
-                }
+                    //check if Grant is not expired
+                    checkForExpiry( grant, res, next );
 
-                //if token is valid, forward/handle the request
-                next();
-              }
+                    //If grant is valid
+                    if (token.status === 'active') {
+                      //Check if token has not expired token.
+                      checkForExpiry( token, res, next );
 
-            }
-            return res.json('003: Grant has expired. Need to request for Grant again.');
-          });
+                      //if token is valid, forward/handle the request
+                      next();
 
+                    }else {
 
-        }
-        return res.json('002: App is not active');
-      });
+                      res.json('004: Token is inactive');
+                    };
 
+                  };
+
+                } else{
+
+                  res.json('004: Grant does not exist for the token.');
+                };
+                // return res.json('003: Grant has expired. Need to request for Grant again.');
+              });
+
+            }else {
+              return res.json('002: App is not active');
+            };
+
+          }else {
+            res.json('001: App for the token does not exist');
+          };
+
+        });
+
+      } else{
+
+        res.json('004: Token does not exist');
+      };
 
 
     });
@@ -202,9 +227,25 @@ console.log('.............. inside oauth2o-mongodb.......................');
 
 
   /**
+   * Check if the instance(grant or token) has expired or not and
+   * update the status to inactive if so
+   * PS: This method could also go in respective models, but DRY
+   */
+  function checkForExpiry (instance, res, next) {
+
+    if (instance.expiryDate && instance.expiryDate < new Date()) {
+      instance.update({status: 'inactive'}, function (err) {
+        if(err) return next(err);
+        return res.json('003: Grant has expired. Need to request for Grant again.');
+      });
+      return res.json('003: Grant has expired. Need to request for Grant again.');
+    };
+
+  };
+
+  /**
    * expose the module via `module.exports`
    */
-  console.log('........returning MongooseAdapater ...........................');
   return MongooseAdapater;
 
 };

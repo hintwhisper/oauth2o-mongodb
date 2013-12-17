@@ -10,7 +10,7 @@ var mongoose = require('mongoose')
  * 
  */
 
-var grantSchema = new Schema({
+var GrantSchema = new Schema({
   appId: String,
   grant: String,
   status: {
@@ -26,4 +26,4 @@ var grantSchema = new Schema({
  * module returns compiled schema
  */
 
-module.exports = mongoose.model('Grant', grantSchema);
+module.exports = mongoose.model('Grant', GrantSchema);
