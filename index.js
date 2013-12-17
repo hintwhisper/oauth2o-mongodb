@@ -91,16 +91,18 @@ module.exports = function(connectionString) {
         if(app.status === 'active') {
 
           //get encrypted grant code and decrypt it.
-          var encGrant = req.headers['encGrant'];
+          var encGrant = req.headers['encgrant'];
 
           //TODO: Decrypt encGrant with app.secretKey
           var decKey = app.decipher(encGrant);
 
           Grant.findOne({appId: appId, grant: decKey}, function(err, grant) {
+
             if (err) {
               console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
               return next(err);
             };
+
             if(grant){
               if (grant.status === 'active') {
 
