@@ -70,7 +70,7 @@ module.exports = function(connectionString) {
 
       }else {
 
-        res.json('002: App is not active');
+        res.json('002: App does not exist or is not active');
       };
     });
   };
