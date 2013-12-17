@@ -108,9 +108,7 @@ module.exports = function(connectionString) {
               if (grant.status === 'active') {
 
                 //check if Grant has not expired. Grant.createdTime < now()
-                if (grant.expiryDate && grant.expiryDate > new Date()){
-                  return res.json('003: Grant has expired. Need to request for Grant again.');      
-                }
+                checkForExpiry( grant, res, next );
 
                 //If Grant is valid
 
@@ -185,24 +183,19 @@ module.exports = function(connectionString) {
                 console.log('......................');
                 console.log(grant);
                 if (grant) {
-                  console.log('Grant exists ******************');
                   if (grant.status === 'active') {
 
-                    console.log('Grant active ******************');
                     //check if Grant is not expired
-                    if (grant.expiryDate && grant.expiryDate > new Date()) {
-                      return res.json('003: Grant has expired. Need to request for Grant again.');
-                    }
+                    checkForExpiry( grant, res, next );
 
                     //If grant is valid
                     if (token.status === 'active') {
                       //Check if token has not expired token.
-                      if (token.expiryDate && token.expiryDate > new Date()) {
-                        return res.json('004: Token has expired. Need to request for Token again.');
-                      };
+                      checkForExpiry( token, res, next );
 
                       //if token is valid, forward/handle the request
                       next();
+
                     }else {
 
                       res.json('004: Token is inactive');
@@ -241,9 +234,25 @@ module.exports = function(connectionString) {
 
 
   /**
+   * Check if the instance(grant or token) has expired or not and
+   * update the status to inactive if so
+   * PS: This method could also go in respective models, but DRY
+   */
+  function checkForExpiry (instance, res, next) {
+
+    if (instance.expiryDate && instance.expiryDate < new Date()) {
+      instance.update({status: 'inactive'}, function (err) {
+        if(err) return next(err);
+        return res.json('003: Grant has expired. Need to request for Grant again.');
+      });
+      return res.json('003: Grant has expired. Need to request for Grant again.');
+    };
+
+  };
+
+  /**
    * expose the module via `module.exports`
    */
-  console.log('........returning MongooseAdapater ...........................');
   return MongooseAdapater;
 
 };
