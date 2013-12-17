@@ -91,7 +91,7 @@ module.exports = function(connectionString) {
         if(app.status === 'active') {
 
           //get encrypted grant code and decrypt it.
-          var encGrant = req.headers['encgrant'];
+          var encGrant = req.body.encGrant;
 
           //TODO: Decrypt encGrant with app.secretKey
           var decKey = app.decipher(encGrant);
@@ -161,7 +161,8 @@ module.exports = function(connectionString) {
     // is valid then `next()`
 
     //Pick token from header and not from body
-    var tokenString = req.headers['token'];
+    var tokenString = req.headers['authorization'];
+    console.log("Authorization Header: "+tokenString);
 
     Token.findOne({token: tokenString}, function(err, token){
       

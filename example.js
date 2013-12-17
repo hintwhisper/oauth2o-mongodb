@@ -25,7 +25,12 @@ app.use(app.router);
 
 app.post('/auth/grant', routes.createGrant);
 app.post('/auth/token', routes.createToken);
-app.post('/auth/', routes.authorize);
+app.post('/auth/', routes.authorize, test1);
+
+function test1 (req, res, next) {
+	console.log('************** Inside test1 **************');
+	res.json(' From Test1 ');
+}
 
 http.createServer(app).listen(app.get('port'), function(){
   console.log('Express server listening on port ' + app.get('port'));
