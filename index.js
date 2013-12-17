@@ -91,7 +91,7 @@ module.exports = function(connectionString) {
         if(app.status === 'active') {
 
           //get encrypted grant code and decrypt it.
-          var encGrant = req.headers.encGrant;
+          var encGrant = req.headers['encGrant'];
 
           //TODO: Decrypt encGrant with app.secretKey
           var decKey = app.decipher(encGrant);
