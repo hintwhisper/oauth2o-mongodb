@@ -38,10 +38,8 @@ module.exports = function(connectionString) {
    */
 
   MongooseAdapater.createGrant = function(req, res, next) {
-    console.log('mongodb - createGrant - '+req.body.appId);
     App.findOne({ appId: req.body.appId }, function(err, app) {
       if (err) return next(err);
-      console.log(app);
       if (app && app.status === 'active') {
 
         var buf = crypto.randomBytes(48);
@@ -53,9 +51,8 @@ module.exports = function(connectionString) {
         //REMOVE - Test Encrypted Code
         var cipher = crypto.createCipher('aes-256-cbc', app.secretKey);
         // 34TRwWOUPdpcSWPC5e83pWYbdy7ZjK7X5IDEMJRPaVQMJgeLSGc1B8qVwAHyCRQhbvbhL7xfjk6A4MiLCIpthNrgs/SCAUAiptVkpl09KnCkrqkb3AlzLDIQQR3g17JsbT86NXdclCdWwUitOCTLhg==
-        // var cipher = crypto.createCipher('aes-256-cbc', 'b53e738e6b585c8efee05f87a450d4fd0b5e2ca0d322b83bf49240c3cb71e525887a337f89f1c90165ac7be42c4273be');
         var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
-        console.log('encrypted - '+encrypted);
+        console.log('encrypted - '+ encrypted);
 
         var expiryDate = new Date();
         expiryDate.setDate( expiryDate.getDate() + 7 ); // one week expiry
@@ -94,7 +91,7 @@ module.exports = function(connectionString) {
         if(app.status === 'active') {
 
           //get encrypted grant code and decrypt it.
-          var encGrant = req.body.encGrant;
+          var encGrant = req.headers.encGrant;
 
           //TODO: Decrypt encGrant with app.secretKey
           var decKey = app.decipher(encGrant);
@@ -110,9 +107,6 @@ module.exports = function(connectionString) {
                 //check if Grant has not expired. Grant.createdTime < now()
                 checkForExpiry( grant, res, next );
 
-                //If Grant is valid
-
-                // crypto.randomBytes(48, function(ex, buf) {
                 var buf = crypto.randomBytes(48);
 
                 var tokenString = buf.toString('hex');
@@ -178,10 +172,6 @@ module.exports = function(connectionString) {
 
               Grant.findOne({appId: token.appId, grant: token.grant}, function(err, grant) {
                 if (err) return next(err);
-                console.log('......................');
-                console.log('......................');
-                console.log('......................');
-                console.log(grant);
                 if (grant) {
                   if (grant.status === 'active') {
 
