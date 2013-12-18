@@ -28,7 +28,6 @@ app.post('/auth/token', routes.createToken);
 app.post('/auth/', routes.authorize, test1);
 
 function test1 (req, res, next) {
-	console.log('************** Inside test1 **************');
 	res.json(' From Test1 ');
 }
 

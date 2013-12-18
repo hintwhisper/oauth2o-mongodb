@@ -50,7 +50,6 @@ module.exports = function(connectionString) {
 
         //REMOVE - Test Encrypted Code
         var cipher = crypto.createCipher('aes-256-cbc', app.secretKey);
-        // 34TRwWOUPdpcSWPC5e83pWYbdy7ZjK7X5IDEMJRPaVQMJgeLSGc1B8qVwAHyCRQhbvbhL7xfjk6A4MiLCIpthNrgs/SCAUAiptVkpl09KnCkrqkb3AlzLDIQQR3g17JsbT86NXdclCdWwUitOCTLhg==
         var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
         console.log('encrypted - '+ encrypted);
 
@@ -90,10 +89,7 @@ module.exports = function(connectionString) {
       if(app){
         if(app.status === 'active') {
 
-          //get encrypted grant code and decrypt it.
           var encGrant = req.body.encGrant;
-
-          //TODO: Decrypt encGrant with app.secretKey
           var decKey = app.decipher(encGrant);
 
           Grant.findOne({appId: appId, grant: decKey}, function(err, grant) {
@@ -110,7 +106,6 @@ module.exports = function(connectionString) {
                 checkForExpiry( grant, res, next );
 
                 var buf = crypto.randomBytes(48);
-
                 var tokenString = buf.toString('hex');
 
                 Token.create({
@@ -148,8 +143,6 @@ module.exports = function(connectionString) {
       };
   
     });
-    //return res.json('001: App does not exist');
-
   };
 
   /**
@@ -181,12 +174,10 @@ module.exports = function(connectionString) {
                     //check if Grant is not expired
                     checkForExpiry( grant, res, next );
 
-                    //If grant is valid
                     if (token.status === 'active') {
                       //Check if token has not expired token.
                       checkForExpiry( token, res, next );
 
-                      //if token is valid, forward/handle the request
                       next();
 
                     }else {
@@ -200,7 +191,6 @@ module.exports = function(connectionString) {
 
                   res.json('004: Grant does not exist for the token.');
                 };
-                // return res.json('003: Grant has expired. Need to request for Grant again.');
               });
 
             }else {
