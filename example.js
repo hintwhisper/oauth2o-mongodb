@@ -7,7 +7,6 @@
 var express = require('express')
   , oAuth2o = require('./oauth2o')
   , oAuth2oMongo = require('./oauth2o-mongodb')
-  , oAuth2oClient = require('./oauth2-client')
   , http = require('http')
   , crypto = require('crypto');
 
