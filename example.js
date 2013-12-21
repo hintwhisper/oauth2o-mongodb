@@ -26,11 +26,16 @@ app.use(app.router);
 app.post('/auth/grant', routes.createGrant);
 app.post('/auth/token', routes.createToken);
 // app.post('/auth', routes.authorize);
-app.post('/successfulAuth', routes.authorize, successfulAuth);
+app.post('/successfulAuth', routes.authorize, successfulAuthPost);
+app.get('/successfulAuth', routes.authorize, successfulAuthGet);
 app.get('/segments-profile', routes.authorize, segmentsProfile);
 
-function successfulAuth (req, res, next) {
-  res.json(' From Test2 ');
+function successfulAuthPost (req, res, next) {
+  res.json(' From Test2 POST ');
+};
+
+function successfulAuthGet (req, res, next) {
+  res.json(' From Test2 GET');
 };
 
 function segmentsProfile (req, res, next) {
