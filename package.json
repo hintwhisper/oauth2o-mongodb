@@ -1,7 +1,7 @@
 {
   "name": "oauth2o-mongodb",
   "version": "0.0.1",
-  "description": "oauth2o-mongodb ===============",
+  "description": "oauth2o-mongodb for Ductjs",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

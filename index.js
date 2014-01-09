@@ -16,9 +16,11 @@ var mongoose = require('mongoose');
  * database connection
  */
 
-module.exports = function(connectionString) {
+module.exports = function(connectionString, validHours) {
 
-  var MongooseAdapater = {};
+  var MongooseAdapater = {
+    validHours: validHours
+  };
 
   /**
    * connect to the db
@@ -38,8 +40,10 @@ module.exports = function(connectionString) {
    */
 
   MongooseAdapater.createGrant = function(req, res, next) {
+
     App.findOne({ appId: req.body.appId }, function(err, app) {
       if (err) return next(err);
+
       if (app && app.status === 'active') {
 
         var buf = crypto.randomBytes(48);
@@ -53,14 +57,10 @@ module.exports = function(connectionString) {
         var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
         console.log('encrypted - '+ encrypted);
 
-        var expiryDate = new Date();
-        expiryDate.setDate( expiryDate.getDate() + 7 ); // one week expiry
-
         Grant.create({
           grant: grantCode,
           appId: req.body.appId,
-          status: 'active',
-          expiryDate: expiryDate
+          status: 'active'
         }, function(err, grant) {
           if (err) return next(err);
 
@@ -68,7 +68,6 @@ module.exports = function(connectionString) {
         });
 
       }else {
-
         res.json('002: App does not exist or is not active');
       };
     });
@@ -81,7 +80,8 @@ module.exports = function(connectionString) {
    */
 
   MongooseAdapater.createToken = function(req, res, next) {
-    var appId = req.body.appId;
+    var appId = req.body.appId
+      , _this = this;
 
     //If appId exists
     App.findOne({ appId: appId }, function(err, app) {
@@ -89,8 +89,8 @@ module.exports = function(connectionString) {
       if(app){
         if(app.status === 'active') {
 
-          var encGrant = req.body.encGrant;
-          var decKey = app.decipher(encGrant);
+          var encryptedGrant = req.body.encryptedGrant;
+          var decKey = app.decipher(encryptedGrant);
 
           Grant.findOne({appId: appId, grant: decKey}, function(err, grant) {
 
@@ -107,6 +107,9 @@ module.exports = function(connectionString) {
 
                 var buf = crypto.randomBytes(48);
                 var tokenString = buf.toString('hex');
+
+                var expiryDate = new Date();
+                expiryDate.setDate( expiryDate.getDate() + _this.validHours );
 
                 Token.create({
                   appId: req.body.appId,
