@@ -188,7 +188,9 @@ module.exports = function(connectionString, validHours) {
                       res.json('004: Token is inactive');
                     };
 
-                  };
+                  } else {
+                       res.json('003: Token has expired. Need to request for Token again.');
+                  }
 
                 } else{
 
