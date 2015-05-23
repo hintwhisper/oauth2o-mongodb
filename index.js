@@ -185,32 +185,32 @@ module.exports = function(connectionString, validHours) {
 
                     }else {
 
-                      res.json('004: Token is inactive');
+                      res.status(401).json('004: Token is inactive');
                     };
 
                   }  else{
-                    res.json('003: Grant has expired. Need to request for Grant again.');
+                    res.status(401).json('003: Grant has expired. Need to request for Grant again.');
                    };
 
                 } else{
 
-                  res.json('004: Grant does not exist for the token.');
+                  res.status(401).json('004: Grant does not exist for the token.');
                 };
               });
 
             }else {
-              return res.json('002: App is not active');
+              return res.status(401).json('002: App is not active');
             };
 
           }else {
-            res.json('001: App for the token does not exist');
+            res.status(401).json('001: App for the token does not exist');
           };
 
         });
 
       } else{
 
-        res.json('004: Token does not exist');
+        res.status(401).json('004: Token does not exist');
       };
 
 
@@ -231,9 +231,9 @@ module.exports = function(connectionString, validHours) {
     if (instance.expiryDate && instance.expiryDate < new Date()) {
       instance.update({status: 'inactive'}, function (err) {
         if(err) return next(err);
-        return res.json('003: Grant has expired. Need to request for Grant again.');
+        return res.status(401).json('003: Grant has expired. Need to request for Grant again.');
       });
-      return res.json('003: Grant has expired. Need to request for Grant again.');
+      return res.status(401).json('003: Grant has expired. Need to request for Grant again.');
     };
 
   };
