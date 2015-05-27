@@ -175,11 +175,11 @@ module.exports = function(connectionString, validHours) {
                   if (grant.status === 'active') {
 
                     //check if Grant is not expired
-                    checkForExpiry( grant, res, next );
+                    checkForExpiry( grant,'Grant', res, next );
 
                     if (token.status === 'active') {
                       //Check if token has not expired token.
-                      checkForExpiry( token, res, next );
+                      checkForExpiry( token, 'Token',res, next );
 
                       next();
 
@@ -226,14 +226,18 @@ module.exports = function(connectionString, validHours) {
    * update the status to inactive if so
    * PS: This method could also go in respective models, but DRY
    */
-  function checkForExpiry (instance, res, next) {
+  function checkForExpiry (instance, instanceName, res, next) {
 
     if (instance.expiryDate && instance.expiryDate < new Date()) {
+      var messsage = '003Grant: Grant has expired. Need to request for Grant again.';
+      if (instanceName === 'Token') {
+        messsage = '003Token: Grant has expired. Need to request for Grant again.'
+      }
       instance.update({status: 'inactive'}, function (err) {
         if(err) return next(err);
-        return res.status(401).json('003: Grant has expired. Need to request for Grant again.');
+        return res.status(401).json(messsage);
       });
-      return res.status(401).json('003: Grant has expired. Need to request for Grant again.');
+      return res.status(401).json(messsage);
     };
 
   };
