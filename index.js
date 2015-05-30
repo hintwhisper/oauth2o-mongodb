@@ -68,7 +68,7 @@ module.exports = function(connectionString, validHours) {
         });
 
       }else {
-        res.json('002: App does not exist or is not active');
+        res.json({code:'002',message:'App does not exist or is not active'});
       };
     });
   };
@@ -139,7 +139,7 @@ module.exports = function(connectionString, validHours) {
 
 
         }else {
-          res.json({code: '002', message: 'App is not active');
+          res.json({code: '002', message: 'App is not active'});
         };
       }else {
         res.json({code:'001', message:'App does not exist'});
@@ -229,9 +229,9 @@ module.exports = function(connectionString, validHours) {
   function checkForExpiry (instance, instanceName, res, next) {
 
     if (instance.expiryDate && instance.expiryDate < new Date()) {
-      var messsage = {code:'0031' message:'Grant has expired. Need to request for Grant again.'};
+      var messsage = {code:'0031' ,message:'Grant has expired. Need to request for Grant again.'};
       if (instanceName === 'Token') {
-        messsage = {code:'0032', message:'Token has expired. Need to request for Grant again.'}
+        messsage = {code:'0032', message:'Token has expired. Need to request for Grant again.'};
       }
       instance.update({status: 'inactive'}, function (err) {
         if(err) return next(err);
