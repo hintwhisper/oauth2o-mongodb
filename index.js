@@ -68,7 +68,7 @@ module.exports = function(connectionString, validHours) {
         });
 
       }else {
-        res.json({code:'002',message:'App does not exist or is not active'});
+        res.json('002:App does not exist or is not active');
       };
     });
   };
