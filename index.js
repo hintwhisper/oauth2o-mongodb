@@ -95,7 +95,7 @@ module.exports = function(connectionString, validHours) {
           Grant.findOne({appId: appId, grant: decKey}, function(err, grant) {
 
             if (err) {
-              console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
+              // console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
               return next(err);
             };
 
@@ -129,20 +129,20 @@ module.exports = function(connectionString, validHours) {
                 });
 
               } else{
-                res.json('003: Grant has expired. Need to request for Grant again.');
+                res.json({code:'0031',message:'Grant has expired. Need to request for Grant again.'});
               };
             }else {
-              res.json('003: Grant does not exist');
+              res.json({code: '006',message:'Grant does not exist'});
             };
            
           });
 
 
         }else {
-          res.json('002: App is not active');
+          res.json({code: '002', message: 'App is not active');
         };
       }else {
-        res.json('001: App does not exist');
+        res.json({code:'001', message:'App does not exist'});
       };
   
     });
@@ -185,32 +185,32 @@ module.exports = function(connectionString, validHours) {
 
                     }else {
 
-                      res.status(401).json('004: Token is inactive');
+                      res.status(401).json({code:'004',messsage:'Token is inactive'});
                     };
 
                   }  else{
-                    res.status(401).json('003: Grant has expired. Need to request for Grant again.');
+                    res.status(401).json({code:'0031',messsage:'Grant has expired. Need to request for Grant again.'});
                    };
 
                 } else{
 
-                  res.status(401).json('004: Grant does not exist for the token.');
+                  res.status(401).json({code:'004',messsage:'Grant does not exist for the token.'});
                 };
               });
 
             }else {
-              return res.status(401).json('002: App is not active');
+              return res.status(401).json({code: '002', messsage:'App is not active'});
             };
 
           }else {
-            res.status(401).json('001: App for the token does not exist');
+            res.status(401).json({code:'001',message:'App for the token does not exist'});
           };
 
         });
 
       } else{
 
-        res.status(401).json('004: Token does not exist');
+        res.status(401).json({code: '004', messsage:'Token does not exist'});
       };
 
 
@@ -229,9 +229,9 @@ module.exports = function(connectionString, validHours) {
   function checkForExpiry (instance, instanceName, res, next) {
 
     if (instance.expiryDate && instance.expiryDate < new Date()) {
-      var messsage = '003Grant: Grant has expired. Need to request for Grant again.';
+      var messsage = {code:'0031' message:'Grant has expired. Need to request for Grant again.'};
       if (instanceName === 'Token') {
-        messsage = '003Token: Grant has expired. Need to request for Grant again.'
+        messsage = {code:'0032', message:'Token has expired. Need to request for Grant again.'}
       }
       instance.update({status: 'inactive'}, function (err) {
         if(err) return next(err);
