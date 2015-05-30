@@ -1,4 +1,3 @@
-
 /**
  * 
  */
@@ -68,7 +67,7 @@ module.exports = function(connectionString, validHours) {
         });
 
       }else {
-        res.json('002:App does not exist or is not active');
+        res.json('002: App does not exist or is not active');
       };
     });
   };
@@ -95,7 +94,7 @@ module.exports = function(connectionString, validHours) {
           Grant.findOne({appId: appId, grant: decKey}, function(err, grant) {
 
             if (err) {
-              // console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
+              console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
               return next(err);
             };
 
@@ -129,20 +128,20 @@ module.exports = function(connectionString, validHours) {
                 });
 
               } else{
-                res.json({code:'0031',message:'Grant has expired. Need to request for Grant again.'});
+                res.json('003: Grant has expired. Need to request for Grant again.');
               };
             }else {
-              res.json({code: '006',message:'Grant does not exist'});
+              res.json('003: Grant does not exist');
             };
            
           });
 
 
         }else {
-          res.json({code: '002', message: 'App is not active'});
+          res.json('002: App is not active');
         };
       }else {
-        res.json({code:'001', message:'App does not exist'});
+        res.json('001: App does not exist');
       };
   
     });
@@ -175,42 +174,42 @@ module.exports = function(connectionString, validHours) {
                   if (grant.status === 'active') {
 
                     //check if Grant is not expired
-                    checkForExpiry( grant,'Grant', res, next );
+                    checkForExpiry( grant, res, next );
 
                     if (token.status === 'active') {
                       //Check if token has not expired token.
-                      checkForExpiry( token, 'Token',res, next );
+                      checkForExpiry( token, res, next );
 
                       next();
 
                     }else {
 
-                      res.status(401).json({code:'004',messsage:'Token is inactive'});
+                      res.status(401).json('004: Token is inactive');
                     };
 
                   }  else{
-                    res.status(401).json({code:'0031',messsage:'Grant has expired. Need to request for Grant again.'});
+                    res.status(401).json('003: Grant has expired. Need to request for Grant again.');
                    };
 
                 } else{
 
-                  res.status(401).json({code:'004',messsage:'Grant does not exist for the token.'});
+                  res.status(401).json('004: Grant does not exist for the token.');
                 };
               });
 
             }else {
-              return res.status(401).json({code: '002', messsage:'App is not active'});
+              return res.status(401).json('002: App is not active');
             };
 
           }else {
-            res.status(401).json({code:'001',message:'App for the token does not exist'});
+            res.status(401).json('001: App for the token does not exist');
           };
 
         });
 
       } else{
 
-        res.status(401).json({code: '004', messsage:'Token does not exist'});
+        res.status(401).json('004: Token does not exist');
       };
 
 
@@ -226,18 +225,14 @@ module.exports = function(connectionString, validHours) {
    * update the status to inactive if so
    * PS: This method could also go in respective models, but DRY
    */
-  function checkForExpiry (instance, instanceName, res, next) {
+  function checkForExpiry (instance, res, next) {
 
     if (instance.expiryDate && instance.expiryDate < new Date()) {
-      var messsage = {code:'0031' ,message:'Grant has expired. Need to request for Grant again.'};
-      if (instanceName === 'Token') {
-        messsage = {code:'0032', message:'Token has expired. Need to request for Grant again.'};
-      }
       instance.update({status: 'inactive'}, function (err) {
         if(err) return next(err);
-        return res.status(401).json(messsage);
+        return res.status(401).json('003: Grant has expired. Need to request for Grant again.');
       });
-      return res.status(401).json(messsage);
+      return res.status(401).json('003: Grant has expired. Need to request for Grant again.');
     };
 
   };
