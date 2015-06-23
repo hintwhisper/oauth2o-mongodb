@@ -82,12 +82,12 @@ module.exports = function(connectionString, validHours) {
           status: 'active'
         }, function(err, grant) {
           if (err) return next(err);
-          if (app.appId === 'app-002') res.json({GRANT:grantCode});
+          if (app.appId === 'app-002') res.json({GRANT:grantCode})
           else {
-            res.json(grantCode);
-          }
-        });
+            res.json(grantCode);    
+          }       
 
+        });
       }else {
         res.json({code:'002',message:' App does not exist or is not active'});
       };
@@ -145,10 +145,12 @@ module.exports = function(connectionString, validHours) {
                   //Push token to Grant
                   grant.update( {$push: { tokens: tokenString }}, function (err) {
                     if(err) return next(err);
-                    if (appId === 'app-002') res.json({TOKEN:tokenString});
+                    if (app.appId === 'app-002') res.json({TOKEN:tokenString});
                     else {
                       res.json(tokenString);
                     }
+                    
+
                   });
 
                 });
