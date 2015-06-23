@@ -3,13 +3,31 @@
  * 
  */
 
-var crypto = require('crypto')
+var CryptoJS = require('crypto-js')
 , bcrypt = require('bcrypt');
+ var Crypto = require('crypto');
 
 /**
  * 
  */
+var crypto = {
 
+  encrypt : function (text, password) {
+    try {
+      return CryptoJS.AES.encrypt(text, password).toString();
+    } catch (err) { return ''; }
+  },
+
+  decrypt : function (text, password) {
+    try {
+      var decrypted = CryptoJS.AES.decrypt(text, password);
+      return decrypted.toString(CryptoJS.enc.Utf8);
+    } catch (err) { return ''; }
+  }
+}
+function replaceAll(find, replace, str) {
+  return str.replace(new RegExp(find, 'g'), replace);
+}
 var mongoose = require('mongoose');
 
 /**
@@ -40,35 +58,38 @@ module.exports = function(connectionString, validHours) {
    */
 
   MongooseAdapater.createGrant = function(req, res, next) {
-
+    // console.log('--------------------');
+    //console.log(req.body.appId)
     App.findOne({ appId: req.body.appId }, function(err, app) {
       if (err) return next(err);
 
       if (app && app.status === 'active') {
 
-        var buf = crypto.randomBytes(48);
+        var buf = Crypto.randomBytes(48);
 
         if (err) return next(err);
 
         var grantCode = buf.toString('hex');
 
         //REMOVE - Test Encrypted Code
-        var cipher = crypto.createCipher('aes-256-cbc', app.secretKey);
-        var encrypted = cipher.update(grantCode, 'utf8', 'base64') + cipher.final('base64');
-        console.log('encrypted - '+ encrypted);
-
+        // var cipher = createCipher('aes-256-cbc', app.secretKey);
+        // var encrypted = crypto.encrypt(update(grantCode, 'utf8', 'base64') + cipher.final('base64');
+        // console.log('encrypted - '+ encrypted);
+        var encrypted = crypto.encrypt(grantCode,app.secretKey);
         Grant.create({
           grant: grantCode,
           appId: req.body.appId,
           status: 'active'
         }, function(err, grant) {
           if (err) return next(err);
-
-          res.json(grantCode);
+          if (app.appId === 'app-002') res.json({GRANT:grantCode});
+          else {
+            res.json(grantCode);
+          }
         });
 
       }else {
-        res.json('002: App does not exist or is not active');
+        res.json({code:'002',message:' App does not exist or is not active'});
       };
     });
   };
@@ -90,12 +111,13 @@ module.exports = function(connectionString, validHours) {
         if(app.status === 'active') {
 
           var encryptedGrant = req.body.encryptedGrant;
-          var decKey = app.decipher(encryptedGrant);
-
+          encryptedGrant = replaceAll(' ','+',encryptedGrant);
+          var decKey = crypto.decrypt(encryptedGrant,app.secretKey);
+        
           Grant.findOne({appId: appId, grant: decKey}, function(err, grant) {
 
             if (err) {
-              console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
+              // console.log('001: Unauthorize Access. Grant passed doest not exist for App: ' + req.body.appId);
               return next(err);
             };
 
@@ -105,7 +127,7 @@ module.exports = function(connectionString, validHours) {
                 //check if Grant has not expired. Grant.createdTime < now()
                 checkForExpiry( grant, res, next );
 
-                var buf = crypto.randomBytes(48);
+                var buf = Crypto.randomBytes(48);
                 var tokenString = buf.toString('hex');
 
                 var expiryDate = new Date();
@@ -123,26 +145,29 @@ module.exports = function(connectionString, validHours) {
                   //Push token to Grant
                   grant.update( {$push: { tokens: tokenString }}, function (err) {
                     if(err) return next(err);
-                    res.json(tokenString);
+                    if (appId === 'app-002') res.json({TOKEN:tokenString});
+                    else {
+                      res.json(tokenString);
+                    }
                   });
 
                 });
 
               } else{
-                res.json('003: Grant has expired. Need to request for Grant again.');
+                res.json({code:'0031',message:'Grant has expired. Need to request for Grant again.'});
               };
             }else {
-              res.json('003: Grant does not exist');
+              res.json({code: '006',message:'Grant does not exist'});
             };
            
           });
 
 
         }else {
-          res.json('002: App is not active');
+          res.json({code: '002', message: 'App is not active'});
         };
       }else {
-        res.json('001: App does not exist');
+        res.json({code:'001', message:'App does not exist'});
       };
   
     });
@@ -185,32 +210,32 @@ module.exports = function(connectionString, validHours) {
 
                     }else {
 
-                      res.status(401).json('004: Token is inactive');
+                      res.status(401).json({code:'004',messsage:'Token is inactive'});
                     };
 
                   }  else{
-                    res.status(401).json('003: Grant has expired. Need to request for Grant again.');
+                    res.status(401).json({code:'0031',messsage:'Grant has expired. Need to request for Grant again.'});
                    };
 
                 } else{
 
-                  res.status(401).json('004: Grant does not exist for the token.');
+                  res.status(401).json({code:'004',messsage:'Grant does not exist for the token.'});
                 };
               });
 
             }else {
-              return res.status(401).json('002: App is not active');
+              return res.status(401).json({code: '002', messsage:'App is not active'});
             };
 
           }else {
-            res.status(401).json('001: App for the token does not exist');
+            res.status(401).json({code:'001',message:'App for the token does not exist'});
           };
 
         });
 
       } else{
 
-        res.status(401).json('004: Token does not exist');
+        res.status(401).json({code: '004', messsage:'Token does not exist'});
       };
 
 
@@ -229,9 +254,9 @@ module.exports = function(connectionString, validHours) {
   function checkForExpiry (instance, instanceName, res, next) {
 
     if (instance.expiryDate && instance.expiryDate < new Date()) {
-      var messsage = '003Grant: Grant has expired. Need to request for Grant again.';
+      var messsage = {code:'0031' ,message:'Grant has expired. Need to request for Grant again.'};
       if (instanceName === 'Token') {
-        messsage = '003Token: Grant has expired. Need to request for Grant again.'
+        messsage = {code:'0032', message:'Token has expired. Need to request for Grant again.'};
       }
       instance.update({status: 'inactive'}, function (err) {
         if(err) return next(err);
