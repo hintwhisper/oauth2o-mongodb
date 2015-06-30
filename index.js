@@ -137,7 +137,8 @@ module.exports = function(connectionString, validHours) {
                   appId: req.body.appId,
                   grant: decKey,
                   token: tokenString,
-                  status: 'active'
+                  status: 'active',
+                  expiryDate: expiryDate
                 }, function(err, token){
 
                   if (err) return next(err);
