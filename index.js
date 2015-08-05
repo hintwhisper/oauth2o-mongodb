@@ -186,7 +186,7 @@ module.exports = function(connectionString, validHours) {
 
     //Pick token from header and not from body
     var tokenString = req.headers['authorization'];
-    console.log("Authorization Header: "+tokenString);
+  
 
     Token.findOne({token: tokenString}, function(err, token){
       
