@@ -3,8 +3,7 @@
  * 
  */
 
-var CryptoJS = require('crypto-js')
-, bcrypt = require('bcrypt');
+var CryptoJS = require('crypto-js');
  var Crypto = require('crypto');
 
 /**
