@@ -42,7 +42,14 @@ module.exports = function(connectionString, validHours) {
   /**
    * connect to the db
    */
-  mongoose.createConnection(connectionString, { server: { poolSize: 5 } });
+
+   mongoose.connect(connectionString, {
+    useMongoClient: true
+  });
+  var db = mongoose.connection;
+  
+  db.on('error', console.error.bind(console, 'MongoDB connection error:'));
+  // mongoose.createConnection(connectionString, { server: { poolSize: 5 } });
 
   var App = require('./models/app_model')
     , Grant = require('./models/grant_model')
